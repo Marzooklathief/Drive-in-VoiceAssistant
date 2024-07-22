@@ -5,5 +5,4 @@ SpeechRecognition
 openai
 mysql-connector-python
 python-dotenv
-pyaudio==0.2.11
 

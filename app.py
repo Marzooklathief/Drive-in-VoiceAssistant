@@ -1,204 +1,151 @@
-import streamlit as st
+import pyttsx3
 import speech_recognition as sr
+import pandas as pd
 import requests
-import openai
-import mysql.connector
-from streamlit.components.v1 import html
 
-openai.api_key = 'YOUR_API_KEY'
+GEMINI_API_KEY = 'AIzaSyAUGR8InzzEjXgc5AyTnR9kLObx3qYRrvs'
+CSV_FILE_PATH = r"C:\Users\gsath\OneDrive\Desktop\sps.csv"
+
+engine = pyttsx3.init()
 recognizer = sr.Recognizer()
+
+def speak_text(text):
+    engine.say(text)
+    engine.runAndWait()
 
 def recognize_speech():
     with sr.Microphone() as source:
-        st.write("Listening...")
+        print("Listening...")
         recognizer.adjust_for_ambient_noise(source)
         audio = recognizer.listen(source)
         try:
             text = recognizer.recognize_google(audio)
-            st.write(f"Recognized text: {text}")
+            print(f"Recognized text: {text}")
             return text
         except sr.UnknownValueError:
             return "Sorry, I did not understand that."
         except sr.RequestError:
             return "Sorry, the service is down."
 
-def chat_with_gpt(prompt):
+def chat_with_gemini(prompt):
     try:
-        response = openai.ChatCompletion.create(
-            model="gpt-4-turbo",
-            messages=[
-                {"role": "system", "content": "You are a drive-in assistant. Help customers with their orders."},
-                {"role": "user", "content": prompt}
+        headers = {
+            'Content-Type': 'application/json'
+        }
+        data = {
+            'contents': [
+                {
+                    'role': 'user',
+                    'parts': [{'text': prompt}]
+                }
             ]
+        }
+        response = requests.post(
+            f"https://generativelanguage.googleapis.com/v1/models/gemini-pro:generateContent?key={GEMINI_API_KEY}",
+            headers=headers,
+            json=data
         )
-        return response['choices'][0]['message']['content']
+        response.raise_for_status()
+        response_json = response.json()
+        if 'candidates' in response_json and len(response_json['candidates']) > 0:
+            return response_json['candidates'][0]['content']['parts'][0]['text']
+        else:
+            return "Sorry, I'm unable to process your request right now."
+    except requests.exceptions.HTTPError as http_err:
+        print(f"HTTP error occurred: {http_err}")
+        return "Sorry, I'm unable to process your request right now."
     except Exception as e:
-        st.write(f"Error fetching GPT-4 Turbo response: {e}")
+        print(f"Error fetching Gemini API response: {e}")
         return "Sorry, I'm unable to process your request right now."
 
 def get_menu():
-    db_connection = mysql.connector.connect(
-        host="127.0.0.1",
-        user="root",
-        password="123456",
-        database="kfc_menu_db"
-    )
-    cursor = db_connection.cursor(dictionary=True)
-    cursor.execute("SELECT * FROM menu")
-    menu = cursor.fetchall()
-    cursor.close()
-    db_connection.close()
-    return menu
+    try:
+        menu_df = pd.read_csv(CSV_FILE_PATH)
+        return menu_df.to_dict(orient='records')
+    except Exception as e:
+        print(f"Error reading CSV file: {e}")
+        return None
 
 def get_item_details(deal_name, menu):
+    deal_name = deal_name.lower().strip()
     for item in menu:
-        if item['deal'].lower() == deal_name.lower():
+        item_deal_name = item['Deal'].lower().strip()
+        if item_deal_name == deal_name:
             return item
     return None
 
-st.title("Voice Assistant Interface")
-
-html_content = """
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Voice Assistant</title>
-    <style>
-        body {
-            font-family: Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            background-color: #000;
-            color: white;
-        }
-        .button-container {
-            text-align: center;
-        }
-        .round-button {
-            width: 150px;
-            height: 150px;
-            border-radius: 50%;
-            background-color: #fff;
-            color: #000;
-            border: none;
-            outline: none;
-            font-size: 24px;
-            cursor: pointer;
-            box-shadow: 0px 4px 6px rgba(0, 0, 0, 0.1);
-            transition: background-color 0.3s, box-shadow 0.3s;
-        }
-        .round-button:hover {
-            background-color: #e0e0e0;
-            box-shadow: 0px 6px 8px rgba(0, 0, 0, 0.15);
-        }
-    </style>
-</head>
-<body>
-<div class="button-container">
-    <button class="round-button" onclick="startRecognition()">Speak</button>
-    <p id="recognized-text">Press the button and speak...</p>
-</div>
-<script>
-    const recognition = new (window.SpeechRecognition || window.webkitSpeechRecognition)();
-    recognition.lang = 'en-US';
-    recognition.interimResults = false;
-    recognition.maxAlternatives = 1;
-    recognition.onresult = function(event) {
-        const text = event.results[0][0].transcript;
-        document.getElementById('recognized-text').textContent = 'You said: ' + text;
-        fetch('/process_speech', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({ text: text })
-        })
-        .then(response => response.json())
-        .then(data => {
-            if (data.speech) {
-                speakText(data.speech);
-            }
-        });
-    };
-    recognition.onerror = function(event) {
-        document.getElementById('recognized-text').textContent = 'Error occurred in recognition: ' + event.error;
-    };
-    function startRecognition() {
-        document.getElementById('recognized-text').textContent = 'Listening...';
-        recognition.start();
-    }
-    function speakText(text) {
-        const speechSynthesis = window.speechSynthesis;
-        const utterance = new SpeechSynthesisUtterance(text);
-        speechSynthesis.speak(utterance);
-    }
-</script>
-</body>
-</html>
-"""
-
-html(html_content, height=600)
-
-if st.button("Start Voice Assistant"):
-    st.write("Welcome to the drive-in! How can I assist you today?")
+def main():
+    speak_text("Welcome to the KFC drive-in! How can I assist you today?")
     
     order = []
-    total_price = 0
+    total_savings = 0
 
     menu = get_menu()
     if not menu:
-        st.write("Sorry, I couldn't retrieve the menu at the moment.")
-    else:
-        while True:
-            user_input = recognize_speech()
-            if "thank you" in user_input.lower():
-                st.write("Goodbye! Have a great day!")
-                break
+        speak_text("Sorry, I couldn't retrieve the menu at the moment.")
+        return
+    
+    while True:
+        user_input = recognize_speech()
+        if "thank you" in user_input.lower():
+            speak_text("Goodbye! Have a great day!")
+            break
 
-            st.write(f"User input: {user_input}")
+        print(f"User input: {user_input}")
+        
+        if "menu" in user_input.lower():
+            menu_text = "Here is our menu: " + ", ".join([item['Deal'] for item in menu])
+            speak_text(menu_text)
+
+        elif "price" in user_input.lower():
+            deal_name = user_input.split("price of")[-1].strip()
+            item_details = get_item_details(deal_name, menu)
+            if item_details:
+                price = item_details['Price (in Rs.)']
+                speak_text(f"The price of {deal_name} is Rs. {price}.")
+            else:
+                speak_text(f"Sorry, I couldn't find the details for {deal_name}.")
+
+        elif "description" in user_input.lower():
+            deal_name = user_input.split("description of")[-1].strip()
+            item_details = get_item_details(deal_name, menu)
+            if item_details:
+                description = item_details['Description']
+                speak_text(f"The description of {deal_name} is: {description}.")
+            else:
+                speak_text(f"Sorry, I couldn't find the details for {deal_name}.")
+
+        elif "savings" in user_input.lower():
+            deal_name = user_input.split("savings of")[-1].strip()
+            item_details = get_item_details(deal_name, menu)
+            if item_details:
+                savings = item_details['Savings']
+                speak_text(f"The savings for {deal_name} is {savings}.")
+            else:
+                speak_text(f"Sorry, I couldn't find the details for {deal_name}.")
+
+        elif "complete order" in user_input.lower():
+            if order:
+                order_summary = ", ".join([item['Deal'] for item in order])
+                speak_text(f"Your order includes: {order_summary}. Your total savings for this order is Rs. {total_savings}.")
+            else:
+                speak_text("You have not added any items to your order yet.")
+            break
+
+        else:
+            response = chat_with_gemini(user_input)
+            print(f"Gemini API response: {response}")
+            speak_text(response)
             
-            if "menu" in user_input.lower():
-                menu_text = "Here is our menu: " + ", ".join([item['deal'] for item in menu])
-                st.write(menu_text)
-                st.markdown(f"<script>speakText('{menu_text}');</script>", unsafe_allow_html=True)
-
-            elif "price of" in user_input.lower():
-                deal_name = user_input.split("price of")[-1].strip()
-                item_details = get_item_details(deal_name, menu)
-                if item_details:
-                    price = item_details['price (inRs.)']
-                    description = item_details['description']
-                    speech = f"The price of {deal_name} is Rs. {price}. Description: {description}"
-                    st.write(speech)
-                    st.markdown(f"<script>speakText('{speech}');</script>", unsafe_allow_html=True)
-                else:
-                    st.write(f"Sorry, I couldn't find the details for {deal_name}.")
-                    st.markdown("<script>speakText('Sorry, I couldn\'t find the details for that item.');</script>", unsafe_allow_html=True)
-
-            elif "add" in user_input.lower():
-                deal_name = user_input.split("add")[-1].strip()
+            for deal_name in response.split(','):
+                deal_name = deal_name.strip()
                 item_details = get_item_details(deal_name, menu)
                 if item_details:
                     order.append(item_details)
-                    price = int(item_details['price (inRs.)'])
-                    total_price += price
-                    speech = f"Added {deal_name} to your order. Your current total is Rs. {total_price}."
-                    st.write(speech)
-                    st.markdown(f"<script>speakText('{speech}');</script>", unsafe_allow_html=True)
-                else:
-                    st.write(f"Sorry, I couldn't find {deal_name} on the menu.")
-                    st.markdown("<script>speakText('Sorry, I couldn\'t find that item on the menu.');</script>", unsafe_allow_html=True)
-
-            elif "total amount" in user_input.lower():
-                speech = f"Your current total order amount is Rs. {total_price}."
-                st.write(speech)
-                st.markdown(f"<script>speakText('{speech}');</script>", unsafe_allow_html=True)
-
-            else:
-                response = chat_with_gpt(user_input)
-                st.write(f"GPT-4 Turbo response: {response}")
-                st.markdown(f"<script>speakText('{response}');</script>", unsafe_allow_html=True)
+                    savings = item_details.get('Savings', "0")
+                    if "Rs." in savings:
+                        savings_value = int(''.join(filter(str.isdigit, savings)))
+                        total_savings += savings_value
+            
+if __name__ == "__main__":
+    main()

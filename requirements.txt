@@ -1,9 +1,7 @@
 streamlit
-pyttsx3
+pandas
 requests
+pyttsx3
 SpeechRecognition
-openai
-mysql-connector-python
-python-dotenv
-sounddevice==0.4.6
-threading
+sounddevice
+numpy

@@ -150,6 +150,7 @@ def main():
             print(f"Gemini API response: {response}")
             speak_text(response)
             
+            # Assuming the response contains a comma-separated list of deal names
             for deal_name in response.split(','):
                 deal_name = deal_name.strip()
                 item_details = get_item_details(deal_name, menu)

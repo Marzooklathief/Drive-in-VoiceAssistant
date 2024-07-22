@@ -1,0 +1,6 @@
+streamlit
+pyttsx3
+requests
+SpeechRecognition
+openai
+mysql-connector-python

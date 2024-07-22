@@ -6,4 +6,4 @@ openai
 mysql-connector-python
 python-dotenv
 sounddevice==0.4.6
-
+threading

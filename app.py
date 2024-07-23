@@ -5,10 +5,13 @@ import streamlit as st
 import pyttsx3
 import speech_recognition as sr
 
+# Initialize Pyttsx3 for text-to-speech
 engine = pyttsx3.init()
 
+# Initialize Speech Recognition
 recognizer = sr.Recognizer()
 
+# Gemini API Key
 GEMINI_API_KEY = 'AIzaSyAUGR8InzzEjXgc5AyTnR9kLObx3qYRrvs'
 
 def speak_text(text):
@@ -16,6 +19,7 @@ def speak_text(text):
         engine.say(text)
         engine.runAndWait()
     
+    # Run the TTS in a separate thread
     thread = threading.Thread(target=tts)
     thread.start()
 
@@ -68,7 +72,7 @@ def chat_with_gemini(prompt):
 
 def get_menu():
     try:
-        menu_df = pd.read_csv('kfc menu - Sheet1.csv')
+        menu_df = pd.read_csv(r'C:\Users\gsath\OneDrive\Desktop\Anss\kfc menu.csv')
         menu = menu_df.to_dict(orient='records')
         return menu
     except Exception as e:

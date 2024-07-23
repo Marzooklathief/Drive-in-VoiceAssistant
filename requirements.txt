@@ -1,7 +1,4 @@
-streamlit
-pandas
-requests
-pyttsx3
-SpeechRecognition
-sounddevice
-numpy
+echo "openai==0.6.5
+pyttsx3==2.90
+SpeechRecognition==3.8.1
+requests==2.25.1" 

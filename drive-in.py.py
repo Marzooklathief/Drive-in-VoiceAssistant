@@ -3,13 +3,13 @@ import pyttsx3
 import speech_recognition as sr
 import requests
 
-openai.api_key = 'sk-proj-LncshqBgQSPCqwUHGODlT3BlbkFJebtrhqa9LQo32lz41XJC'
+openai.api_key = 'YOUR API KEY'
 
 engine = pyttsx3.init()
 
 recognizer = sr.Recognizer()
 
-API_URL = "https://api.sheety.co/52fe1c86580a796963266ef1048a4dce/kfcMenu/sheet1"
+API_URL = "YOUR API URL"
 
 def speak_text(text):
     engine.say(text)

@@ -45,6 +45,8 @@ Run the main script to start the drive-in assistant:
 
 ```bash
 python main.py
+![image](https://github.com/user-attachments/assets/062618d7-73b1-4ae5-9ec0-e94af49be3f5)
+
 
 ## Example Interaction
 

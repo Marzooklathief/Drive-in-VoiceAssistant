@@ -12,7 +12,7 @@ engine = pyttsx3.init()
 recognizer = sr.Recognizer()
 
 # Gemini API Key
-GEMINI_API_KEY = 'AIzaSyAUGR8InzzEjXgc5AyTnR9kLObx3qYRrvs'
+GEMINI_API_KEY = 'YOUR API KEY'
 
 def speak_text(text):
     def tts():

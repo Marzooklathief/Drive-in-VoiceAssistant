@@ -39,13 +39,15 @@ This is a voice-interactive drive-in assistant application that uses speech reco
     API_URL = "https://api.sheety.co/52fe1c86580a796963266ef1048a4dce/kfcMenu/sheet1"
     ```
 
+![presto_header_image_s2](https://github.com/user-attachments/assets/6c0d5919-6982-422b-bcbb-b4fd9d8c28e6)
+
 ## Usage
 
 Run the main script to start the drive-in assistant:
 
 ```bash
 python main.py
-![image](https://github.com/user-attachments/assets/062618d7-73b1-4ae5-9ec0-e94af49be3f5)
+
 
 
 ## Example Interaction
